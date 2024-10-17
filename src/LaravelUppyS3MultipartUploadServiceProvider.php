@@ -19,8 +19,7 @@ class LaravelUppyS3MultipartUploadServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-uppy-s3-multipart-upload')
             ->hasConfigFile()
-            ->hasViews()
-            ->hasRoute('web');
+            ->hasViews();
     }
 
     public function bootingPackage()
