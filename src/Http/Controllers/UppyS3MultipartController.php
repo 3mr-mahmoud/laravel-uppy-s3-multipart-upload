@@ -305,6 +305,39 @@ class UppyS3MultipartController extends Controller
             ]);
     }
 
+    public function signUpload(Request $request)
+    {
+        try {
+            // Generate a unique key using UUID and append the filename
+            $key = Str::uuid()->toString() . '-' . $request->input('filename');
+            $contentType = $request->input('contentType');
+
+            // Create a PutObjectCommand to sign the upload URL
+            $command = $this->client->getCommand('PutObject', [
+                'Bucket' => $this->bucket,
+                'Key'    => $key,
+                'ContentType' => $contentType,
+            ]);
+
+            // Create a presigned request with an expiration
+            $presignedRequest = $this->client->createPresignedRequest(
+                $command,
+                config('uppy-s3-multipart-upload.s3.presigned_url.expiry_time')
+            );
+
+            // Return the signed URL and the HTTP method for upload
+            return response()->json([
+                'url'    => (string) $presignedRequest->getUri(),
+                'method' => 'PUT',
+                'key'    => $key
+            ]);
+        } catch (Throwable $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+            ], 500);
+        }
+    }
+
     /**
      * Get the presigned URL for a part.
      *
