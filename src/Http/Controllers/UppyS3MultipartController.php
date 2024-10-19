@@ -38,6 +38,15 @@ class UppyS3MultipartController extends Controller
         return encodeURIComponent($str);
     }
 
+    private function getDirectory()
+    {
+        if(!request()->input('metadata.directory')) {
+            return '';
+        }
+        $sanitizedDirectory = str_replace('/', '', request()->input('metadata.directory'));
+        return $sanitizedDirectory.'/';
+    }
+
     /**
      * Add the preflight response header so it's possible to use the X-CSRF-TOKEN on Uppy request header.
      *
@@ -106,7 +115,7 @@ class UppyS3MultipartController extends Controller
         $filenameRequest = $request->input('filename');
         $fileExtension = pathinfo($filenameRequest, PATHINFO_EXTENSION);
         $folder = config('uppy-s3-multipart-upload.s3.bucket.folder') ? config('uppy-s3-multipart-upload.s3.bucket.folder').'/' : '';
-        $key = $folder.Str::ulid().'.'.$fileExtension;
+        $key = $folder.$this->getDirectory().Str::ulid().'.'.$fileExtension;
 
         try {
             $result = $this->client->createMultipartUpload([
@@ -309,7 +318,10 @@ class UppyS3MultipartController extends Controller
     {
         try {
             // Generate a unique key using UUID and append the filename
-            $key = Str::uuid()->toString() . '-' . $request->input('filename');
+            $filenameRequest = $request->input('filename');
+            $fileExtension = pathinfo($filenameRequest, PATHINFO_EXTENSION);
+            $folder = config('uppy-s3-multipart-upload.s3.bucket.folder') ? config('uppy-s3-multipart-upload.s3.bucket.folder').'/' : '';
+            $key = $folder.$this->getDirectory().Str::ulid().'.'.$fileExtension;
             $contentType = $request->input('contentType');
 
             // Create a PutObjectCommand to sign the upload URL
